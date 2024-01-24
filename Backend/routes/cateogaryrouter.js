@@ -5,11 +5,11 @@ const  {singlecateogarycontroller, cateogarycontroller, UpdateCateogarycontrolle
 
 const cateogaryrouter = express.Router()
 
-cateogaryrouter.post("/create-cateogary", requireSignin, admincheck, CreateCateogarycontroller)
+cateogaryrouter.post("/create-cateogary",requireSignin,admincheck,  CreateCateogarycontroller)
 
-cateogaryrouter.put("/update-cateogary/:id", requireSignin, admincheck, UpdateCateogarycontroller);
+cateogaryrouter.put("/update-cateogary",requireSignin,admincheck,  UpdateCateogarycontroller);
 cateogaryrouter.get("/cateogary", cateogarycontroller)
 cateogaryrouter.get("/single-cateogary/:slug", singlecateogarycontroller)
-cateogaryrouter.delete("/delete-cateogary/:id",requireSignin, admincheck, deletecateogary)
+cateogaryrouter.post("/delete-cateogary",requireSignin,admincheck,  deletecateogary)
 
 module.exports = cateogaryrouter

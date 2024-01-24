@@ -2,20 +2,23 @@ const slugify = require("slugify")
 const eventsmodel = require("../models/eventsmodel")
 const fs = require('fs')
 const usermodel = require("../models/usermodel")
+const { Console } = require("console")
 
 const createevents = async(req, res) =>{
     try{
-        const {title,slug,content,writer,tokentoassign} = req.fields
+        const {title,content,writer,tokentoassign} = req.fields
         const {photo} = req.files
         switch(true){
             case !title:
-                return res.status(201).send({ error:"Title required"})
+              console.log("error1")  
+              return res.status(400).send({ error:"Title required"})
             case !content:
-                return res.status(201).send({ error:"Title required"})
+              console.log("error2")  
+              return res.status(400).send({ error:"Title required"})
             case !writer:
-                return res.status(201).send({ error:"Title required"})
-            case !photo && photo.size > 1000000 :
-                return res.status(201).send({ error:"Title required"}) 
+              console.log("error3")  
+              return res.status(400).send({ error:"Title required"})
+              
         }
         const event = new eventsmodel({...req.fields, slug: slugify(title)})
         if(photo){
@@ -29,7 +32,8 @@ const createevents = async(req, res) =>{
         })
     }
     catch(error){
-        res.status(201).send({
+      console.log(error)
+        res.status(400).send({
             success: false,
             error,
             message: "Error in creating events"
@@ -37,9 +41,10 @@ const createevents = async(req, res) =>{
     }
 }
 const updateevent = async (req, res) => {
-  try{
+  try{       
+
     //formidable ka istemaal to get working url photos not just any strings
-    const {title, content,writer, tokentoassign } = req.fields
+    const {name, title, content,writer, tokentoassign } = req.fields
     const {photo} = req.files
     switch(true){
         case !title:
@@ -50,15 +55,30 @@ const updateevent = async (req, res) => {
             return res.status(201).send({ error: "writer is required"}) 
         case !tokentoassign:
             return res.status(201).send({ error: "tokentoassign is required"}) 
-        case !photo && photo.size > 1000000:
-            return res.status(201).send({ error: "photo is invalid"}) 
+          
         }
-        const event = await eventsmodel.findByIdAndUpdate(req.params.id, {...req.fields, slug: slugify(title)},{new: true}  )
+        console.log(req.fields)
+        const ev = await eventsmodel.findOne({ title:name });
+        if (!ev) {
+          return res.status(404).send({
+            success: false,
+            message: "Event not found",
+          });
+        }
+        const event = await eventsmodel.findOne({slug:ev.slug})
+        event.title  = title;
+        event.slug = slugify(title);
+        event.content = content;
+        event.writer= writer;
+        event.tokentoassign = tokentoassign;
+        console.log(2)
         if(photo){
             event.photo.data = fs.readFileSync(photo.path)
             event.photo.contentType = photo.type
         }            
         await event.save()
+        console.log(2)
+        console.log(event)
         res.status(200).send({
             success: true,
             event,
@@ -66,18 +86,17 @@ const updateevent = async (req, res) => {
         })
 }
 catch(error){
-  console.log(error)
     res.status(201).send({
         success: false,
         error,
-        message:"Error in event"
+        message:"Error in event" 
     })
 }}
 
 
 const eventcontroller = async (req,res) =>{
     try{
-        const event = await eventsmodel.find({}).select("-photo") 
+        const event = await eventsmodel.find({}).select("-photo").sort({quantity:-1}) //-1 for negative sort
         
         res.status(200).send({
           success: true,
@@ -86,6 +105,27 @@ const eventcontroller = async (req,res) =>{
         })
     }
     catch(error){
+      console.log(error)
+        res.status(500).send({
+            message: "Error event contorller",
+            error,
+            success: false
+        })
+    }
+  }
+
+  const sineventcontroller = async (req,res) =>{
+    try{
+        const event = await (await eventsmodel.find({})).splice(0,1)
+        
+        res.status(200).send({
+          success: true,
+          message: "All events here",
+          "event":event
+        })
+    }
+    catch(error){
+      console.log(error)
         res.status(500).send({
             message: "Error event contorller",
             error,
@@ -95,7 +135,7 @@ const eventcontroller = async (req,res) =>{
   }
   const singleeventcontroller = async (req, res) => {
     try {
-      const event = await eventsmodel.findOne({ slug: req.params.slug });
+      const event = await eventsmodel.findOne({ slug: req.params.slug }).select("-photo");
   
       res.status(200).send({
         success: true,
@@ -113,11 +153,23 @@ const eventcontroller = async (req,res) =>{
   };
   const deleteevent = async (req, res) => {
     try {
-      const { id } = req.params;
-      await eventsmodel.findByIdAndDelete(id);
+      console.log(1)
+      const { name } = req.body;
+
+      const ev = await eventsmodel.findOne({ title:name });
+console.log(ev)
+      if (!ev) {
+        return res.status(404).send({
+          success: false,
+          message: "Event not found",
+        });
+      }
+
+
+      await eventsmodel.findByIdAndDelete(ev._id);
       res.status(200).send({
         success: true,
-        message: id +" event delted Successfully",
+        message: ev._id +" event delted Successfully",
       });
     } catch (error) {
       console.log(error);
@@ -184,6 +236,7 @@ const eventcontroller = async (req,res) =>{
         
     }
     catch(error){
+      console.log(error)
       res.status(400).send({
         success:false,
         error: error,
@@ -219,22 +272,30 @@ const eventcontroller = async (req,res) =>{
         error: err,
         message: "Failed to fetch users in the event"
       });
-    }
+    } 
   };
   const getUserEvents = async (req, res) => {
     try {
-      const { email } = req.body;
-      const user = usermodel.findOne({email:email})
-      const events = await eventsmodel
-        .find({ participants: { $in: [user._id] } })
-        .populate('participants'); // Populate the 'participants' field in events
+      const { iD } = req.body;
   
-      res.status(200).send({
-        success: true,
-        events: events,
-        message: "Events for the user"
-      });
-    } catch (err) {
+      const events = await eventsmodel.find({});
+  console.log(events.length)
+      const userEvents = []; // Initialize an empty array to store user events
+  
+      for (const event of events) {
+        // Loop through events
+        if (event.participants.includes(iD)) {
+          // Check if user ID is in participants array
+          userEvents.push({'title' :event.title , 'id': event._id}); 
+      }
+      
+    }
+    res.status(200).send({
+      success: true, 
+      userEvents: userEvents,
+      message: "User's events fetched successfully"
+    });
+   } catch (err) {
       res.status(400).send({
         success: false,
         error: err,
@@ -242,25 +303,35 @@ const eventcontroller = async (req,res) =>{
       });
     }
   };
+  
   const authenticateparticipant = async (req, res) => {
     try {
-      const { users } = req.body;
-      const array = [];
+    
+      const { email } = req.body;
       const event = await eventsmodel.findOne({slug: req.params.slug})
-      for (let user of users) {
-        const foundUser = await usermodel.findOne({ email: user });
-        array.push(foundUser);
+        const foundUser = await usermodel.findOne({ email: email });
+
         if (foundUser) {
-          foundUser.tokenn = event.tokentoassign;
-          await foundUser.save(); // Save the updated token for each user
+console.log(foundUser.tokenn, event.tokentoassign)
+          
+          foundUser.tokenn += event.tokentoassign;
+          
+          token = foundUser.tokenn;
+          console.log(foundUser.tokenn, event.tokentoassign)
+
+           // Save the updated token for each user
+           foundUser.save()
+          res.status(200).send({
+            success: true,
+            token,
+          message: "Events for the user"
+          });
         }
-      }
-      res.status(200).send({
-        success: true,
-        tokenupdated: array,
-        message: "Events for the user"
-      });
+      
+      
     } catch (err) {
+console.log(err.message)
+
       res.status(400).send({
         success: false,
         error: err,
@@ -269,4 +340,4 @@ const eventcontroller = async (req,res) =>{
     }
   };
     
-  module.exports = {authenticateparticipant ,createevents,getUsersInEvent,getUserEvents, updateevent,deleteevent, eventcontroller, joinevent,singleeventcontroller, eventphotocontroller }
+  module.exports = {sineventcontroller,authenticateparticipant ,createevents,getUsersInEvent,getUserEvents, updateevent,deleteevent, eventcontroller, joinevent,singleeventcontroller, eventphotocontroller }

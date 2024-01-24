@@ -3,9 +3,14 @@ const   mongoose = require("mongoose")
 const   morgan = require("morgan")
 const   router = require("./routes/auth.js")
 const   bcrypt = require("bcryptjs")
+const socketIO = require('socket.io');
+const http = require('http');
+
 //dotenv.config();
 const   cateogaryrouter = require ("./routes/cateogaryrouter.js")
-const  server = express()
+const  server = express() 
+const app = http.createServer(server);
+const io = socketIO(app);
 const   cors = require("cors")
 const productrouter = require("./routes/productroute.js")
 const formidable_express = require("express-formidable")

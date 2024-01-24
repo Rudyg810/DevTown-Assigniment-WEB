@@ -1,19 +1,21 @@
 const   express  =require(   "express")
 const productmodel = require("../models/productmodel.js")
 const { admincheck, requireSignin } =require(   "../middlewares/authmiddleware.js")
-const  {searchcontroller, Createproductcontroller, Updateproductcontroller, singleproductcontroller, deleteproduct, productcontroller, productphotocontroller, productfilter  } =require(   "../controller/productcontroller.js")
+const  {searchcontroller,firstproductcontroller, Createproductcontroller, Updateproductcontroller, singleproductcontroller, deleteproduct, productcontroller, productphotocontroller, productfilter, buy, getpro, getproofuser  } =require(   "../controller/productcontroller.js")
 const fs = require("fs")
 const formidable_express= require("express-formidable")
 const productrouter = express.Router()
 
-productrouter.post("/create-product", requireSignin, admincheck, formidable_express(), Createproductcontroller)
-
-productrouter.put("/update-product/:id", requireSignin, admincheck, formidable_express(), Updateproductcontroller);
-productrouter.get("/product", productcontroller)
+productrouter.post("/create-product",requireSignin, formidable_express(), Createproductcontroller)
+productrouter.put("/update-product",requireSignin, formidable_express(), Updateproductcontroller);
+productrouter.get("/product",  formidable_express(), productcontroller)
 productrouter.get("/single-product/:slug", singleproductcontroller)
 productrouter.get("/product-photo/:pid",formidable_express(), productphotocontroller)
 productrouter.post("/filter-product", productfilter)
+productrouter.post("/get-products-user", getproofuser)
+productrouter.post("/getfirstproduct", firstproductcontroller)
 productrouter.get("/search-product/:keyword", searchcontroller)
-
-productrouter.delete("/delete-product/:id", requireSignin, admincheck, deleteproduct)
+productrouter.post("/buy/:slug",  buy)
+productrouter.get("/get-product-category/:slug",  getpro)
+productrouter.post("/delete-product",requireSignin, deleteproduct)
 module.exports = productrouter

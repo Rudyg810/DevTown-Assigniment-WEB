@@ -35,6 +35,7 @@ const userschema = new mongoose.Schema({
         contentType: String
         
     },
+    
     participants: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'usermodel',

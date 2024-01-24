@@ -12,17 +12,26 @@ const userschema = new mongoose.Schema({
         required: true,
         trim: true
     },
+    address:{
+        type:String,
+        required:false,
+        trim:true
+    },
     email:{
         type: String,
         required: true,
         trim: true
     },
     products: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'productmodel',
+        type: Object ,
+ 
         required: false
-    }],
-    
+    }], 
+    photo:{
+        data: Buffer,
+        contentType: String,
+
+    },
     role:
     {
         type: Number,

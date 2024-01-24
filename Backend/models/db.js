@@ -9,7 +9,7 @@ const DBconnect =  async()=>{
   mongoose.set('strictQuery', false) 
 
 });
-
+ 
 }
 module.exports = DBconnect
 

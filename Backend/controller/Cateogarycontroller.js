@@ -4,13 +4,16 @@ const usermodel = require("../models/usermodel.js")
 
 const CreateCateogarycontroller = async(req,res) =>{
 try{
+  console.log(req.body)
     const {name} = req.body
     if(!name){
-        return res.status(400).send({message:"Name is required"})
+      console.log('error')  
+      return res.status(400).send({message:"Name is required"})
     }
     const existingCateogary = await cateogarymode.findOne({name})
 if(existingCateogary){
-    return res.status(400).send({
+  console.log(error)  
+  return res.status(400).send({
         success: false,
         message: "Cateogary already exist"
     }
@@ -34,19 +37,36 @@ catch(error){
 //update category
 const UpdateCateogarycontroller = async (req, res) => {
   try {
-    const { name } = req.body;
-    const { id } = req.params;
-    const category = await cateogarymode.findByIdAndUpdate(
-      id,
-      { name, slug: slugify(name) },
+    const { name1,name } = req.body;
+    console.log(req.body)
+    const category = await cateogarymode.findOne({ name:name1 }); // Find the category by name
+  
+    if (!category) {
+      console.log(1)
+      
+      return res.status(501).send({
+        success: false,
+        message: "Category not found",
+      });
+    }
+  
+    const categoryId = category._id; // Retrieve the ID of the found category
+  
+    // Update the category using its ID
+    const updatedCategory = await cateogarymode.findByIdAndUpdate(
+      categoryId,
+      { name:name1, slug: slugify(name1) },
       { new: true }
     );
+  console.log(2)
+    
     res.status(200).send({
       success: true,
-      messsage: "Category Updated Successfully",
-      category,
+      message: "Category Updated Successfully",
+      category: updatedCategory,
     });
   } catch (error) {
+    console.log(1)
     console.log(error);
     res.status(201).send({
       success: false,
@@ -93,8 +113,7 @@ const singlecateogarycontroller = async (req, res) => {
 const deletecateogary = async (req, res) => {
   try {
     const { name } = req.body;
-    const { id } = req.params;
-    await cateogarymode.findByIdAndDelete(id);
+    await cateogarymode.findByIdAndDelete(name);
     res.status(200).send({
       success: true,
       message: "Category delted Successfully",
