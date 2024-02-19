@@ -1,4 +1,4 @@
-Todo-List
+# Todo-List
 this is a Todo web application made using MERN stack with Redux
 
 to run the PROJECT
